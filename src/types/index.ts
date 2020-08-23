@@ -9,7 +9,17 @@ export enum animalLocation {
   vehicle = 'vehicle',
 }
 
-export type AnimalLocationMap = Record<number, animalLocation>;
+export enum player {
+  user = 'user',
+  ai = 'ai',
+}
+
+export interface animalConfig {
+  location: animalLocation;
+  movedBy: player | null;
+}
+
+export type AnimalLocationMap = Record<number, animalConfig>;
 
 export interface AnimalDragObj extends DragObjectWithType {
   position: number;

@@ -15,12 +15,10 @@ const AnimalWrapper = styled.div<WrapperProps>`
   height: 0;
   border-left: ${triangleSize}px solid transparent;
   border-right: ${triangleSize}px solid transparent;
-
   border-bottom: ${triangleSize}px solid black;
 `;
 
 interface Props {
-  key: number;
   location: animalLocation;
   position: number;
   shouldShow: boolean;
