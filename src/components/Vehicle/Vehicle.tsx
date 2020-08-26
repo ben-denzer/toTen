@@ -5,6 +5,7 @@ import { seatWidth, seatBorderWidth, seatPadding, Seat } from '../../styles';
 import { itemTypes, AnimalDragObj, animalLocation, AnimalLocationMap, animalConfig, player } from '../../types';
 import Animal from '../Animal';
 import { arrayOfTen } from '../../config';
+import { getAnimalsOnVehicleCount } from '../../utils';
 
 const gridWidth = seatWidth * 5 + seatBorderWidth * 10 + seatPadding * 10;
 
@@ -28,10 +29,7 @@ const Vehicle: React.FC<Props> = ({ addAnimalToVehicle, animalLocationMap }) => 
     },
   });
 
-  const animalsOnVehicle = Object.values(animalLocationMap).filter(
-    (config: animalConfig) => config.location === animalLocation.vehicle
-  ).length;
-
+  const animalsOnVehicle = getAnimalsOnVehicleCount(animalLocationMap);
   return (
     <VehicleWrapper ref={drop}>
       {arrayOfTen.map((itemNumber: number, i: number) => {

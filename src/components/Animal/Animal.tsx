@@ -3,19 +3,15 @@ import styled from 'styled-components';
 import { useDrag } from 'react-dnd';
 import { seatWidth } from '../../styles';
 import { itemTypes, animalLocation } from '../../types';
-
-const triangleSize = seatWidth / 2 - 2;
+import snake from '../../img/snake.png';
 
 interface WrapperProps {
   shouldShow: boolean;
 }
-const AnimalWrapper = styled.div<WrapperProps>`
+const AnimalWrapper = styled.img<WrapperProps>`
   visibility: ${(p) => (p.shouldShow ? 'visible' : 'hidden')};
-  width: 0;
-  height: 0;
-  border-left: ${triangleSize}px solid transparent;
-  border-right: ${triangleSize}px solid transparent;
-  border-bottom: ${triangleSize}px solid black;
+  width: ${seatWidth}px;
+  height: ${seatWidth}px;
 `;
 
 interface Props {
@@ -25,14 +21,14 @@ interface Props {
 }
 
 const Animal: React.FC<Props> = ({ location, position, shouldShow }) => {
-  const [{ isDragging }, drag] = useDrag({
+  const [, drag] = useDrag({
     item: { type: itemTypes.animal, location, position },
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging(),
     }),
   });
 
-  return <AnimalWrapper ref={shouldShow ? drag : null} shouldShow={shouldShow} />;
+  return <AnimalWrapper src={snake} ref={shouldShow ? drag : null} shouldShow={shouldShow} />;
 };
 
 export default Animal;

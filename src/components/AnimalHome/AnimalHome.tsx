@@ -3,9 +3,26 @@ import styled from 'styled-components';
 import { arrayOfTen } from '../../config';
 import { animalLocation, AnimalLocationMap, player } from '../../types';
 import Animal from '../Animal';
-import { Seat } from '../../styles';
+import { Seat, seatWidth, seatPadding } from '../../styles';
+import trainStation from '../../img/station.png';
 
-const AnimalHomeWrapper = styled.div``;
+const AnimalHomeWrapper = styled.div`
+  width: 50%;
+  background-image: url(${trainStation});
+  background-size: contain;
+  background-repeat: no-repeat;
+`;
+
+const HomeSeatWrapper = styled.div`
+  width: ${(seatWidth + seatPadding * 2) * 5}px;
+  height: 100%;
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: space-between;
+  align-items: center;
+  bottom: 5px;
+  z-index: 1;
+`;
 
 interface Props {
   animalLocationMap: AnimalLocationMap;
@@ -15,14 +32,17 @@ interface Props {
 const AnimalHome: React.FC<Props> = ({ animalLocationMap }) => {
   return (
     <AnimalHomeWrapper>
-      {arrayOfTen.map((itemNumber: number) => {
-        const shouldShowInHome = animalLocationMap[itemNumber].location === animalLocation.home;
-        return (
-          <Seat key={itemNumber} location={animalLocation.home}>
-            <Animal location={animalLocation.home} position={itemNumber} shouldShow={shouldShowInHome} />
-          </Seat>
-        );
-      })}
+      {/* <BackgroundImg src={trainStation} draggable={false} /> */}
+      <HomeSeatWrapper>
+        {arrayOfTen.map((itemNumber: number) => {
+          const shouldShowInHome = animalLocationMap[itemNumber].location === animalLocation.home;
+          return (
+            <Seat key={itemNumber} location={animalLocation.home}>
+              <Animal location={animalLocation.home} position={itemNumber} shouldShow={shouldShowInHome} />
+            </Seat>
+          );
+        })}
+      </HomeSeatWrapper>
     </AnimalHomeWrapper>
   );
 };

@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { gameStates, calculatorStateMap, CalculatorState } from '../../types';
 
 enum buttonValues {
   zero = '0',
@@ -13,7 +14,7 @@ enum buttonValues {
   eight = '8',
   nine = '9',
   clear = 'C',
-  ok = 'ok',
+  ok = 'OK',
 }
 
 const calcButtons = [
@@ -33,53 +34,79 @@ const calcButtons = [
 
 const calcPadding = 10;
 
-const calcWidth = 300;
+const calcWidth = 150;
 
 const CalculatorWrapper = styled.div`
   width: ${calcWidth}px;
   display: flex;
   flex-direction: column;
   padding: ${calcPadding}px;
+  background-color: blue;
+  align-items: center;
 `;
 
 const CalculatorScreen = styled.div`
   width: 100%;
+  height: 30px;
+  background-color: lightgray;
+  border-radius: 5px;
   display: flex;
   align-items: center;
   justify-content: center;
+  margin-bottom: 10px;
 `;
 
 const CalcButtonWrapper = styled.div`
   display: flex;
   flex-flow: row wrap;
   align-items: space-around;
+  justify-content: center;
 `;
 
 interface CalcButtonProps {
   val: buttonValues;
+  calcState: CalculatorState;
 }
 
 const CalcButton = styled.div<CalcButtonProps>`
-  width: ${calcWidth / 3 - 10}px;
-  height: ${calcWidth / 3 - 10}px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  ${(p) => {
+    const isDisabled = p.calcState === 'DISABLED' || (p.calcState === 'OK_ONLY' && p.val !== buttonValues.ok);
+    return `
+    width: ${calcWidth / 3 - 20}px;
+    height: ${calcWidth / 3 - 20}px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    background-color: red;
+    border: 1px solid white;
+    border-radius: 4px;
+    cursor: ${isDisabled ? 'default' : 'pointer'};
+    opacity: ${isDisabled ? '.2' : '1'};
+    margin: 5px;`;
+  }}
 `;
 
 interface Props {
   calculatorVal: number | null;
+  gameState: gameStates;
   setCalculatorVal: (newVal: number | null) => void;
   submitCalcValue: () => void;
 }
 
-const Calculator: React.FC<Props> = ({ calculatorVal, setCalculatorVal, submitCalcValue }) => {
+const Calculator: React.FC<Props> = ({ calculatorVal, gameState, setCalculatorVal, submitCalcValue }) => {
+  const calcState: CalculatorState = calculatorStateMap[gameState];
   const handleCalcClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     const val = target.dataset.buttonVal;
-    if (!val) {
+
+    if (!val || calcState === 'DISABLED') {
       return;
     }
+    if (calcState === 'OK_ONLY' && val !== buttonValues.ok) {
+      return;
+    }
+
     switch (val) {
       case buttonValues.clear:
         setCalculatorVal(null);
@@ -96,16 +123,18 @@ const Calculator: React.FC<Props> = ({ calculatorVal, setCalculatorVal, submitCa
   };
 
   return (
-    <CalculatorWrapper>
-      <CalculatorScreen>{calculatorVal || calculatorVal === 0 ? calculatorVal.toString() : ''}</CalculatorScreen>
-      <CalcButtonWrapper onClick={handleCalcClick}>
-        {calcButtons.map((val: buttonValues) => (
-          <CalcButton key={val} data-button-val={val} val={val}>
-            {val}
-          </CalcButton>
-        ))}
-      </CalcButtonWrapper>
-    </CalculatorWrapper>
+    <div>
+      <CalculatorWrapper>
+        <CalculatorScreen>{calculatorVal || calculatorVal === 0 ? calculatorVal.toString() : ''}</CalculatorScreen>
+        <CalcButtonWrapper onClick={handleCalcClick}>
+          {calcButtons.map((val: buttonValues) => (
+            <CalcButton key={val} data-button-val={val} val={val} calcState={calcState}>
+              {val}
+            </CalcButton>
+          ))}
+        </CalcButtonWrapper>
+      </CalculatorWrapper>
+    </div>
   );
 };
 

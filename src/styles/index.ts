@@ -11,7 +11,7 @@ interface SeatProps {
 export const Seat = styled.div<SeatProps>`
   width: ${seatWidth}px;
   height: ${seatWidth}px;
-  border: ${seatBorderWidth}px solid black;
+  border: ${(p) => (p.location === animalLocation.home ? 'none' : seatBorderWidth + 'px solid black')};
   display: flex;
   justify-content: center;
   align-items: center;

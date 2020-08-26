@@ -25,3 +25,29 @@ export interface AnimalDragObj extends DragObjectWithType {
   position: number;
   location: animalLocation;
 }
+
+export enum gameStates {
+  aiActionFirst = 'aiActionFirst',
+  aiActionLast = 'aiActionLast',
+  introScreen = 'introScreen',
+  userActionFirst = 'userActionFirst',
+  userActionLast = 'userActionLast',
+  userTryAgainFirst = 'userTryAgainFirst',
+  userTryAgainLast = 'userTryAgainLast',
+  userWinsMatch = 'userWinsMatch',
+}
+
+export type Scores = Record<player, number>;
+
+export type CalculatorState = 'DISABLED' | 'OK_ONLY' | 'ENABLED';
+
+export const calculatorStateMap: Record<gameStates, CalculatorState> = {
+  aiActionFirst: 'DISABLED',
+  aiActionLast: 'DISABLED',
+  introScreen: 'DISABLED',
+  userActionFirst: 'OK_ONLY',
+  userActionLast: 'ENABLED',
+  userTryAgainFirst: 'OK_ONLY',
+  userTryAgainLast: 'ENABLED',
+  userWinsMatch: 'DISABLED',
+};
