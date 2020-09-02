@@ -1,6 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
-import { gameStates, calculatorStateMap, CalculatorState } from '../../types';
+import { gameStates } from '../../types';
+import { calcWidth } from '../../styles';
+import { CalculatorState, calculatorStateMap } from '../../config';
 
 enum buttonValues {
   zero = '0',
@@ -33,8 +35,6 @@ const calcButtons = [
 ];
 
 const calcPadding = 10;
-
-const calcWidth = 150;
 
 const CalculatorWrapper = styled.div`
   width: ${calcWidth}px;

@@ -27,27 +27,13 @@ export interface AnimalDragObj extends DragObjectWithType {
 }
 
 export enum gameStates {
-  aiActionFirst = 'aiActionFirst',
-  aiActionLast = 'aiActionLast',
-  introScreen = 'introScreen',
-  userActionFirst = 'userActionFirst',
-  userActionLast = 'userActionLast',
-  userTryAgainFirst = 'userTryAgainFirst',
-  userTryAgainLast = 'userTryAgainLast',
+  userClickButton = 'userClickButton',
+  aiFirstRound = 'aiFirstRound',
+  userFirstRound = 'userFirstRound',
+  aiClickButton = 'aiClickButton',
+  userSecondRound = 'userSecondRound',
+  aiSecondRound = 'aiSecondRound',
   userWinsMatch = 'userWinsMatch',
 }
 
 export type Scores = Record<player, number>;
-
-export type CalculatorState = 'DISABLED' | 'OK_ONLY' | 'ENABLED';
-
-export const calculatorStateMap: Record<gameStates, CalculatorState> = {
-  aiActionFirst: 'DISABLED',
-  aiActionLast: 'DISABLED',
-  introScreen: 'DISABLED',
-  userActionFirst: 'OK_ONLY',
-  userActionLast: 'ENABLED',
-  userTryAgainFirst: 'OK_ONLY',
-  userTryAgainLast: 'ENABLED',
-  userWinsMatch: 'DISABLED',
-};

@@ -2,23 +2,27 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import Vehicle from '../Vehicle';
 import { animalLocation, AnimalLocationMap, player, gameStates, Scores } from '../../types';
-import { arrayOfTen, gameStateMessages } from '../../config';
+import { arrayOfTen, getGameStateMessage } from '../../config';
 import AnimalHome from '../AnimalHome';
 import NumberGenerator from '../NumberGenerator';
 import Calculator from '../Calculator';
 import { getAnimalsOnVehicleCount } from '../../utils';
+import { speak } from '../../services/speechService';
 
 const AppWrapper = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
+  min-height: 100%;
   padding: 0 20px;
-  background-color: #ccc;
 `;
 
 const Row = styled.div`
+  width: 100%;
   display: flex;
   flex-direction: row;
+  justify-content: space-around;
+  margin-bottom: 25px;
 `;
 
 const ScoreRow = styled(Row)`
@@ -51,26 +55,28 @@ const App: React.FC<{}> = () => {
   const [animalLocationMap, setAnimalLocationMap] = useState<AnimalLocationMap>({ ...initialLocationMap });
   const [generatorVal, setGeneratorVal] = useState<number | null>(null);
   const [calculatorVal, setCalculatorVal] = useState<number | null>(null);
-  const [gameState, setGameState] = useState<gameStates>(gameStates.aiActionFirst);
-  const [firstPlayer, setFirstPlayer] = useState<player>(player.ai);
+  const [gameState, setGameState] = useState<gameStates>(gameStates.userClickButton);
   const [totalScores, setTotalScores] = useState<Scores>({ ...initialScore });
   const [matchScores, setMatchScores] = useState<Scores>({ ...initialScore });
+  const [hasAllowedSpeech, setHasAllowedSpeech] = useState<boolean>(false);
 
   const resetMatch = (clearMatchScore: boolean) => {
-    const nextFirstPlayer = firstPlayer === player.ai ? player.user : player.ai;
     setAnimalLocationMap({ ...initialLocationMap });
     setGeneratorVal(null);
     setCalculatorVal(null);
-    setFirstPlayer(nextFirstPlayer);
     if (clearMatchScore) {
       setMatchScores({ ...initialScore });
     }
-    setGameState(nextFirstPlayer === player.ai ? gameStates.aiActionFirst : gameStates.userActionFirst);
+    setNextGameState();
   };
 
   useEffect(() => {
-    console.log(gameStateMessages[gameState]);
-  }, [gameState]);
+    const msg = getGameStateMessage(gameState);
+    console.log(msg);
+    if (/^ai/.test(gameState)) {
+      setTimeout(setNextGameState, 2000);
+    }
+  }, [gameState, hasAllowedSpeech]);
 
   useEffect(() => {
     console.log('match scores', matchScores);
@@ -120,32 +126,19 @@ const App: React.FC<{}> = () => {
     if (!generatorVal) {
       const val = getRandom(9);
       setGeneratorVal(val);
-      if (firstPlayer === player.ai) {
-        setTimeout(() => {
-          aiMove(val);
-          setTimeout(() => {
-            setGameState(gameStates.userActionLast);
-          }, 1000);
-        }, 2000);
-      } else {
-        setTimeout(() => setGameState(gameStates.userActionFirst), 1000);
-      }
+      setNextGameState(val.toString());
     }
   };
 
   const submitCalcVal = () => {
-    if (gameState === gameStates.userActionFirst) {
+    if (gameState === gameStates.userFirstRound) {
       const onVehicleCount = getAnimalsOnVehicleCount(animalLocationMap);
       if (onVehicleCount === generatorVal) {
-        // say great job!
         setMatchScores({ ...matchScores, [player.user]: matchScores[player.user] + (calculatorVal || 0) });
-        setTimeout(() => {
-          setGameState(gameStates.aiActionLast);
-          setTimeout(aiFinishGame, 1000);
-        }, 2000);
+        setNextGameState(calculatorVal?.toString());
         return;
       } else {
-        setGameState(gameStates.userTryAgainFirst);
+        speak('Try Again');
       }
     }
 
@@ -154,10 +147,55 @@ const App: React.FC<{}> = () => {
     }
     if (calculatorVal + generatorVal === 10) {
       setMatchScores({ ...matchScores, [player.user]: matchScores[player.user] + calculatorVal });
-      setGameState(gameStates.userWinsMatch);
-      setTimeout(() => resetMatch(false), 3000);
+      setNextGameState();
     } else {
-      setGameState(gameStates.userTryAgainLast);
+      speak('Try Again.');
+    }
+  };
+
+  const allowSpeech = () => {
+    speak('Hello');
+    setHasAllowedSpeech(true);
+  };
+
+  const wait = (sec: number = 2) => new Promise((resolve) => setTimeout(resolve, sec * 1000));
+
+  const setNextGameState = async (val?: string | number) => {
+    const nextStateMap: Record<gameStates, gameStates> = {
+      [gameStates.userClickButton]: gameStates.aiFirstRound,
+      [gameStates.aiFirstRound]: gameStates.userFirstRound,
+      [gameStates.userFirstRound]: gameStates.aiClickButton,
+      [gameStates.aiClickButton]: gameStates.userSecondRound,
+      [gameStates.userSecondRound]: gameStates.aiSecondRound,
+      [gameStates.aiSecondRound]: gameStates.userWinsMatch,
+      [gameStates.userWinsMatch]: gameStates.userClickButton,
+    };
+
+    const nextState = nextStateMap[gameState];
+
+    console.log('nextGameState', nextState);
+
+    switch (gameState) {
+      case gameStates.userClickButton:
+        await wait();
+        speak(getGameStateMessage(nextState, val?.toString()));
+        await wait();
+        setGameState(nextState);
+        break;
+      case gameStates.aiFirstRound:
+        aiMove(Number(generatorVal));
+        await wait();
+        speak(getGameStateMessage(nextState));
+        setGameState(nextState);
+        break;
+      case gameStates.userFirstRound:
+        speak(getGameStateMessage(nextState, val?.toString()));
+        resetMatch(false);
+        await wait();
+        setGameState(nextState);
+        break;
+      default:
+        speak(`I don't have anything for ${gameState} yet`);
     }
   };
 
@@ -167,6 +205,7 @@ const App: React.FC<{}> = () => {
         <ScoreBox>Player 1 (You): {totalScores[player.user]}</ScoreBox>
         <ScoreBox>Player 2 (Computer): {totalScores[player.ai]}</ScoreBox>
       </ScoreRow>
+      {!hasAllowedSpeech && <div onClick={allowSpeech}>Click here to allow speech</div>}
       <Row>
         <Vehicle animalLocationMap={animalLocationMap} addAnimalToVehicle={addAnimalToVehicle} />
         <NumberGenerator generatorClicked={generatorClicked} generatorVal={generatorVal} />

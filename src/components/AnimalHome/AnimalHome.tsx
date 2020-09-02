@@ -3,11 +3,12 @@ import styled from 'styled-components';
 import { arrayOfTen } from '../../config';
 import { animalLocation, AnimalLocationMap, player } from '../../types';
 import Animal from '../Animal';
-import { Seat, seatWidth, seatPadding } from '../../styles';
+import { Seat, seatWidth, seatPadding, AnimalContainerMixin } from '../../styles';
 import trainStation from '../../img/station.png';
 
 const AnimalHomeWrapper = styled.div`
-  width: 50%;
+  ${AnimalContainerMixin}
+  height: 300px;
   background-image: url(${trainStation});
   background-size: contain;
   background-repeat: no-repeat;

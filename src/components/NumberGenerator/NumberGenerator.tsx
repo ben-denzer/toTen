@@ -1,7 +1,8 @@
 import React from 'react';
 import styled from 'styled-components';
+import { calcWidth } from '../../styles';
 
-const generatorWidth = 150;
+const generatorWidth = calcWidth;
 const generatorSidePadding = 20;
 
 const NumberGeneratorWrapper = styled.div`
