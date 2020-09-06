@@ -33,7 +33,6 @@ export enum gameStates {
   aiClickButton = 'aiClickButton',
   userSecondRound = 'userSecondRound',
   aiSecondRound = 'aiSecondRound',
-  userWinsMatch = 'userWinsMatch',
 }
 
 export type Scores = Record<player, number>;

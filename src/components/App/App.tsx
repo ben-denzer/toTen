@@ -51,6 +51,8 @@ const initialScore: Scores = {
   [player.user]: 0,
 };
 
+const wait = (sec: number = 2) => new Promise((resolve) => setTimeout(resolve, sec * 1000));
+
 const App: React.FC<{}> = () => {
   const [animalLocationMap, setAnimalLocationMap] = useState<AnimalLocationMap>({ ...initialLocationMap });
   const [generatorVal, setGeneratorVal] = useState<number | null>(null);
@@ -59,6 +61,7 @@ const App: React.FC<{}> = () => {
   const [totalScores, setTotalScores] = useState<Scores>({ ...initialScore });
   const [matchScores, setMatchScores] = useState<Scores>({ ...initialScore });
   const [hasAllowedSpeech, setHasAllowedSpeech] = useState<boolean>(false);
+  const [canDrag, setCanDrag] = useState<boolean>(false);
 
   const resetMatch = (clearMatchScore: boolean) => {
     setAnimalLocationMap({ ...initialLocationMap });
@@ -71,16 +74,9 @@ const App: React.FC<{}> = () => {
   };
 
   useEffect(() => {
-    const msg = getGameStateMessage(gameState);
-    console.log(msg);
-    if (/^ai/.test(gameState)) {
-      setTimeout(setNextGameState, 2000);
-    }
+    setCanDrag(gameState === gameStates.userFirstRound || gameState === gameStates.userSecondRound);
+    runStateLogic();
   }, [gameState, hasAllowedSpeech]);
-
-  useEffect(() => {
-    console.log('match scores', matchScores);
-  }, [matchScores]);
 
   const moveAnimal = (newLocation: animalLocation) => (position: number, movedBy: player) => {
     const updated = { ...animalLocationMap, [position]: { location: newLocation, movedBy } };
@@ -90,52 +86,60 @@ const App: React.FC<{}> = () => {
   const addAnimalToVehicle = moveAnimal(animalLocation.vehicle);
   const addAnimalToHome = moveAnimal(animalLocation.home);
 
-  const aiMove = (count: number) => {
+  const updateMap = async (player: player, count: number) => {
     let updatedCount = 0;
     let updated: AnimalLocationMap = JSON.parse(JSON.stringify(animalLocationMap));
-    for (let i of arrayOfTen) {
-      if (updated[i].location === animalLocation.home) {
-        updated[i].location = animalLocation.vehicle;
-        updatedCount++;
-        if (updatedCount === count) {
-          break;
+    if (count > 0) {
+      for (let i of arrayOfTen) {
+        if (updated[i].location === animalLocation.home) {
+          updated[i].location = animalLocation.vehicle;
+          updatedCount++;
+          if (updatedCount === count) {
+            break;
+          }
         }
       }
     }
-    setMatchScores({ ...matchScores, [player.ai]: matchScores[player.ai] + updatedCount });
     setAnimalLocationMap(updated);
+    setMatchScores({ ...matchScores, [player]: matchScores[player] + updatedCount });
+    setNextGameState();
   };
 
-  const aiFinishGame = () => {
-    const remaining = 10 - getAnimalsOnVehicleCount(animalLocationMap);
+  const aiFinishGame = async () => {
+    const onVehicleCount = getAnimalsOnVehicleCount(animalLocationMap);
+    const remaining = 10 - onVehicleCount;
     setCalculatorVal(remaining);
-    aiMove(remaining);
+    await wait(1);
+    updateMap(player.ai, remaining);
+    speak(`${onVehicleCount} plus ${remaining} equals ten.`);
     const updatedScore: Scores = {
       [player.ai]: totalScores[player.ai] + matchScores[player.ai] + remaining,
       [player.user]: totalScores[player.user] + matchScores[player.user],
     };
     setTotalScores(updatedScore);
-    setTimeout(() => resetMatch(true), 3000);
+    await wait(3);
+    resetMatch(true);
   };
 
   const getRandom = (max: number) => {
     return Math.floor(Math.random() * max);
   };
 
-  const generatorClicked = () => {
-    if (!generatorVal) {
-      const val = getRandom(9);
+  const generatorClicked = (force?: boolean) => {
+    if (!generatorVal || force) {
+      const val = getRandom(10);
       setGeneratorVal(val);
-      setNextGameState(val.toString());
+      setNextGameState();
     }
   };
 
-  const submitCalcVal = () => {
-    if (gameState === gameStates.userFirstRound) {
+  const submitCalcVal = async () => {
+    if (gameState === gameStates.userSecondRound) {
       const onVehicleCount = getAnimalsOnVehicleCount(animalLocationMap);
       if (onVehicleCount === generatorVal) {
-        setMatchScores({ ...matchScores, [player.user]: matchScores[player.user] + (calculatorVal || 0) });
-        setNextGameState(calculatorVal?.toString());
+        speak('Great job');
+        setMatchScores({ ...matchScores, [player.user]: matchScores[player.user] + generatorVal });
+        setNextGameState();
         return;
       } else {
         speak('Try Again');
@@ -143,13 +147,22 @@ const App: React.FC<{}> = () => {
     }
 
     if (calculatorVal === null || generatorVal === null) {
+      speak('Try Again.');
       return;
     }
-    if (calculatorVal + generatorVal === 10) {
-      setMatchScores({ ...matchScores, [player.user]: matchScores[player.user] + calculatorVal });
-      setNextGameState();
-    } else {
-      speak('Try Again.');
+    if (gameState === gameStates.userFirstRound) {
+      if (calculatorVal + generatorVal === 10) {
+        await wait(1);
+        speak(`Awesome. ${calculatorVal} is correct. ${generatorVal} plus ${calculatorVal} makes 10.`);
+        await wait();
+        updateMap(player.user, calculatorVal);
+        await wait(3);
+        setMatchScores({ ...matchScores, [player.user]: matchScores[player.user] + calculatorVal });
+        resetMatch(false);
+        setNextGameState();
+      } else {
+        speak('Try Again.');
+      }
     }
   };
 
@@ -158,41 +171,51 @@ const App: React.FC<{}> = () => {
     setHasAllowedSpeech(true);
   };
 
-  const wait = (sec: number = 2) => new Promise((resolve) => setTimeout(resolve, sec * 1000));
-
-  const setNextGameState = async (val?: string | number) => {
+  const setNextGameState = () => {
     const nextStateMap: Record<gameStates, gameStates> = {
       [gameStates.userClickButton]: gameStates.aiFirstRound,
       [gameStates.aiFirstRound]: gameStates.userFirstRound,
       [gameStates.userFirstRound]: gameStates.aiClickButton,
       [gameStates.aiClickButton]: gameStates.userSecondRound,
       [gameStates.userSecondRound]: gameStates.aiSecondRound,
-      [gameStates.aiSecondRound]: gameStates.userWinsMatch,
-      [gameStates.userWinsMatch]: gameStates.userClickButton,
+      [gameStates.aiSecondRound]: gameStates.userClickButton,
     };
 
-    const nextState = nextStateMap[gameState];
+    setGameState(nextStateMap[gameState]);
+  };
 
-    console.log('nextGameState', nextState);
-
+  const runStateLogic = async () => {
     switch (gameState) {
       case gameStates.userClickButton:
-        await wait();
-        speak(getGameStateMessage(nextState, val?.toString()));
-        await wait();
-        setGameState(nextState);
+        await wait(1);
+        speak(getGameStateMessage(gameState));
         break;
       case gameStates.aiFirstRound:
-        aiMove(Number(generatorVal));
         await wait();
-        speak(getGameStateMessage(nextState));
-        setGameState(nextState);
+        speak(getGameStateMessage(gameState, generatorVal?.toString()));
+        await wait();
+        updateMap(player.ai, Number(generatorVal));
         break;
       case gameStates.userFirstRound:
-        speak(getGameStateMessage(nextState, val?.toString()));
-        resetMatch(false);
+        await wait(1);
+        speak(getGameStateMessage(gameState));
+        break;
+      case gameStates.aiClickButton:
+        await wait(1);
+        speak(getGameStateMessage(gameState));
         await wait();
-        setGameState(nextState);
+        generatorClicked(true);
+        break;
+      case gameStates.userSecondRound:
+        await wait(1);
+        speak(getGameStateMessage(gameState, generatorVal?.toString()));
+        break;
+      case gameStates.aiSecondRound:
+        await wait(1);
+        const aiMoveCount = 10 - getAnimalsOnVehicleCount(animalLocationMap);
+        speak(getGameStateMessage(gameState, aiMoveCount.toString()));
+        await wait();
+        aiFinishGame();
         break;
       default:
         speak(`I don't have anything for ${gameState} yet`);
@@ -207,11 +230,11 @@ const App: React.FC<{}> = () => {
       </ScoreRow>
       {!hasAllowedSpeech && <div onClick={allowSpeech}>Click here to allow speech</div>}
       <Row>
-        <Vehicle animalLocationMap={animalLocationMap} addAnimalToVehicle={addAnimalToVehicle} />
+        <Vehicle animalLocationMap={animalLocationMap} addAnimalToVehicle={addAnimalToVehicle} canDrag={canDrag} />
         <NumberGenerator generatorClicked={generatorClicked} generatorVal={generatorVal} />
       </Row>
       <Row>
-        <AnimalHome animalLocationMap={animalLocationMap} addAnimalToHome={addAnimalToHome} />
+        <AnimalHome animalLocationMap={animalLocationMap} addAnimalToHome={addAnimalToHome} canDrag={canDrag} />
         <Calculator
           calculatorVal={calculatorVal}
           setCalculatorVal={setCalculatorVal}

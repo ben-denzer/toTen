@@ -6,21 +6,24 @@ import { itemTypes, animalLocation } from '../../types';
 import snake from '../../img/snake.png';
 
 interface WrapperProps {
+  canDrag: boolean;
   shouldShow: boolean;
 }
 const AnimalWrapper = styled.img<WrapperProps>`
   visibility: ${(p) => (p.shouldShow ? 'visible' : 'hidden')};
   width: ${seatWidth}px;
   height: ${seatWidth}px;
+  cursor: ${(p) => (p.canDrag ? 'pointer' : 'default')};
 `;
 
 interface Props {
+  canDrag: boolean;
   location: animalLocation;
   position: number;
   shouldShow: boolean;
 }
 
-const Animal: React.FC<Props> = ({ location, position, shouldShow }) => {
+const Animal: React.FC<Props> = ({ location, position, shouldShow, canDrag }) => {
   const [, drag] = useDrag({
     item: { type: itemTypes.animal, location, position },
     collect: (monitor) => ({
@@ -28,7 +31,7 @@ const Animal: React.FC<Props> = ({ location, position, shouldShow }) => {
     }),
   });
 
-  return <AnimalWrapper src={snake} ref={shouldShow ? drag : null} shouldShow={shouldShow} />;
+  return <AnimalWrapper src={snake} ref={shouldShow ? drag : null} shouldShow={shouldShow} canDrag={canDrag} />;
 };
 
 export default Animal;

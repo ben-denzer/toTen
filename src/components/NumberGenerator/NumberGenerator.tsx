@@ -46,7 +46,7 @@ const NumberGenerator: React.FC<Props> = ({ generatorVal, generatorClicked }) =>
   const canClick = !generatorVal;
   return (
     <NumberGeneratorWrapper>
-      <GeneratorScreen>{generatorVal ? generatorVal.toString() : ''}</GeneratorScreen>
+      <GeneratorScreen>{generatorVal === null ? '' : generatorVal.toString()}</GeneratorScreen>
       <GeneratorButton type="button" onClick={generatorClicked} canClick={canClick} />
     </NumberGeneratorWrapper>
   );

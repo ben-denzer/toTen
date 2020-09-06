@@ -1,26 +1,26 @@
 import React from 'react';
 import styled from 'styled-components';
 import { useDrop } from 'react-dnd';
-import { seatWidth, seatBorderWidth, seatPadding, Seat, AnimalContainerMixin } from '../../styles';
+import { Seat, AnimalContainerMixin, seatWidth } from '../../styles';
 import { itemTypes, AnimalDragObj, animalLocation, AnimalLocationMap, player } from '../../types';
 import Animal from '../Animal';
 import { arrayOfTen } from '../../config';
 import { getAnimalsOnVehicleCount } from '../../utils';
 
-const gridWidth = seatWidth * 5 + seatBorderWidth * 10 + seatPadding * 10;
-
 const VehicleWrapper = styled.div`
   ${AnimalContainerMixin};
-  border: 1px solid black;
   display: flex;
+  flex-flow: column wrap;
+  height: ${seatWidth * 2 + 10}px;
 `;
 
 interface Props {
   addAnimalToVehicle: (position: number, movedBy: player) => void;
   animalLocationMap: AnimalLocationMap;
+  canDrag: boolean;
 }
 
-const Vehicle: React.FC<Props> = ({ addAnimalToVehicle, animalLocationMap }) => {
+const Vehicle: React.FC<Props> = ({ addAnimalToVehicle, animalLocationMap, canDrag }) => {
   const [, drop] = useDrop({
     accept: itemTypes.animal,
     drop: (e: AnimalDragObj) => {
@@ -30,12 +30,17 @@ const Vehicle: React.FC<Props> = ({ addAnimalToVehicle, animalLocationMap }) => 
 
   const animalsOnVehicle = getAnimalsOnVehicleCount(animalLocationMap);
   return (
-    <VehicleWrapper ref={drop}>
+    <VehicleWrapper ref={canDrag ? drop : null}>
       {arrayOfTen.map((itemNumber: number, i: number) => {
         const shouldShowInVehicle = itemNumber < animalsOnVehicle;
         return (
           <Seat location={animalLocation.vehicle} key={itemNumber}>
-            <Animal location={animalLocation.vehicle} position={itemNumber} shouldShow={shouldShowInVehicle} />
+            <Animal
+              location={animalLocation.vehicle}
+              position={itemNumber}
+              shouldShow={shouldShowInVehicle}
+              canDrag={canDrag}
+            />
           </Seat>
         );
       })}

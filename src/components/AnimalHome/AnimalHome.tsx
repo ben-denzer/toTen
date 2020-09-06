@@ -28,9 +28,10 @@ const HomeSeatWrapper = styled.div`
 interface Props {
   animalLocationMap: AnimalLocationMap;
   addAnimalToHome: (position: number, movedBy: player) => void;
+  canDrag: boolean;
 }
 
-const AnimalHome: React.FC<Props> = ({ animalLocationMap }) => {
+const AnimalHome: React.FC<Props> = ({ animalLocationMap, canDrag }) => {
   return (
     <AnimalHomeWrapper>
       {/* <BackgroundImg src={trainStation} draggable={false} /> */}
@@ -39,7 +40,12 @@ const AnimalHome: React.FC<Props> = ({ animalLocationMap }) => {
           const shouldShowInHome = animalLocationMap[itemNumber].location === animalLocation.home;
           return (
             <Seat key={itemNumber} location={animalLocation.home}>
-              <Animal location={animalLocation.home} position={itemNumber} shouldShow={shouldShowInHome} />
+              <Animal
+                location={animalLocation.home}
+                position={itemNumber}
+                shouldShow={shouldShowInHome}
+                canDrag={canDrag}
+              />
             </Seat>
           );
         })}
